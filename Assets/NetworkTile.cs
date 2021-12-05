@@ -29,6 +29,6 @@ public class NetworkTile : NetworkBehaviour
     public void OccupyTileServerRPC(NetworkBehaviourReference unit)
     {
         if (!occupied)
-            OccupantID.Value = unit.TryGet(out NetworkUnit networkUnit) ? networkUnit.internalId : (ushort)0;
+            OccupantID.Value = unit.TryGet(out NetworkUnit networkUnit) ? networkUnit.internalId.Value : (ushort)0;
     }
 }

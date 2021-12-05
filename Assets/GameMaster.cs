@@ -109,7 +109,7 @@ public class GameMaster : NetworkBehaviour
             Quaternion.identity
         );
         go.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
-        go.GetComponent<NetworkUnit>().internalId = internalUnitId;
+        go.GetComponent<NetworkUnit>().internalId = new NetworkVariable<ushort>(internalUnitId);
         unitByID.Add(internalUnitId, go.GetComponent<NetworkUnit>());
         Tuple<int, int> tileIndex = new Tuple<int, int>(
             (int)boardPosition.x,
