@@ -145,6 +145,18 @@ public class GameMaster : NetworkBehaviour
         }
     }
 
+    [ServerRpc]
+    public void MoveServerRpc(ushort pieceId, int targetX, int targetY)
+    {
+
+    }
+
+    [ServerRpc]
+    public void AttackServerRpc(ushort pieceId, int targetX, int targetY)
+    {
+
+    }
+
     //TODO: This will all only work for white
 
     public void BuildMovementDictionary()
