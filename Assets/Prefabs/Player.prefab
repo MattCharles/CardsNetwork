@@ -62,4 +62,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   units: []
-  color: {r: 0, g: 0, b: 0, a: 0}
+  reticlePrefab: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}
+  reticleInstance: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}

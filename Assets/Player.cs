@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -9,10 +7,13 @@ public class Player : NetworkBehaviour
     NetworkTile selectedTile;
     ulong? id;
     public List<NetworkUnit> units = new List<NetworkUnit>();
+    public GameObject reticlePrefab;
+    public GameObject reticleInstance;
 
     public override void OnNetworkSpawn()
     {
         NetworkManager.Singleton.OnClientConnectedCallback += StartPlayerServerRPC;
+        reticleInstance = Instantiate(reticlePrefab, Vector3.zero, Quaternion.identity);
         base.OnNetworkSpawn();
     }
 
@@ -32,5 +33,7 @@ public class Player : NetworkBehaviour
             selectedTile = hit.collider.gameObject.GetComponent<NetworkTile>();
         }
         Debug.Log("Tile selected at position: (" + selectedTile.xCoord.Value + ", " + selectedTile.yCoord.Value + ")");
+
+        reticleInstance.transform.position = selectedTile.transform.position;
     }
 }

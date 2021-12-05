@@ -387,6 +387,14 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 6185246119338594132, guid: 663c65028fd64cf43b8a924172d64a73, type: 3}
+      propertyPath: reticlePrefab
+      value: 
+      objectReference: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}
+    - target: {fileID: 6185246119338594132, guid: 663c65028fd64cf43b8a924172d64a73, type: 3}
+      propertyPath: reticleInstance
+      value: 
+      objectReference: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}
     - target: {fileID: 6185246119338594134, guid: 663c65028fd64cf43b8a924172d64a73, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 2266076803
