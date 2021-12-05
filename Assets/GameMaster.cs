@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,16 +8,22 @@ public class GameMaster : NetworkBehaviour
     public GameObject tilePrefab;
     public GameObject spearPrefab;
     public GameObject kingPrefab;
+    public Action<uint> action;
     public int max_i = 8;
     public int max_j = 8;
     public float offset = -3.5f;
     public Dictionary<Vector2, GameObject> tiles = new Dictionary<Vector2, GameObject>();
+    public Dictionary<int, NetworkUnit> unitsByID = new Dictionary<int, NetworkUnit>();
+    public ulong blackId;
+    public ulong whiteId;
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         SpawnGridServerRPC();
         SpawnBlackServerRPC();
         SpawnWhiteServerRPC();
+
+        NetworkManager.Singleton.OnClientConnectedCallback += StartGameServerRPC;
     }
 
     [ServerRpc]
@@ -87,5 +94,36 @@ public class GameMaster : NetworkBehaviour
             Quaternion.identity
         );
         kingGo.GetComponent<NetworkObject>().Spawn();
+    }
+
+    [ServerRpc]
+    private void SpawnUnitServerRPC(GameObject prefab, Vector2 boardPosition, uint clientId)
+    {
+        Vector2 newPosition = new Vector2(boardPosition.x + offset, boardPosition.y + offset);
+        GameObject go = Instantiate(
+            prefab,
+            newPosition,
+            Quaternion.identity
+        );
+        go.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
+    }
+
+    [ServerRpc]
+    public void StartGameServerRPC(ulong cliendId)
+    {
+        if (NetworkManager.Singleton.ConnectedClientsIds.Count == 1)
+        {
+            return; // Only one person; Don't assign white or black yet
+        }
+        else if (NetworkManager.Singleton.ConnectedClientsIds.Count == 2)
+        {
+            // second person has joined
+            // TODO: might be weird if second and third leave but let's not worry about that just yet
+
+            int oneOrZero = new System.Random().Next(1);
+            List<ulong> ConnectedClientsIds = (List<ulong>)NetworkManager.Singleton.ConnectedClientsIds;
+            blackId = ConnectedClientsIds[oneOrZero];
+            whiteId = ConnectedClientsIds[1 - oneOrZero];
+        }
     }
 }
