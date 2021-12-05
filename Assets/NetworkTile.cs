@@ -14,21 +14,21 @@ public class NetworkTile : NetworkBehaviour
     public NetworkVariable<int> xCoord = new NetworkVariable<int>();
     public NetworkVariable<int> yCoord = new NetworkVariable<int>();
     private NetworkVariable<bool> isBackrow = new NetworkVariable<bool>(false);
+    public NetworkVariable<ushort> OccupantID = new NetworkVariable<ushort>();
 
     private bool occupied
     {
         get
         {
-            return OccupantID.Value != -1;
+            return OccupantID.Value != 0;
         }
     }
 
-    public NetworkVariable<int> OccupantID = new NetworkVariable<int>(-1);
 
     [ServerRpc]
     public void OccupyTileServerRPC(NetworkBehaviourReference unit)
     {
         if (!occupied)
-            OccupantID.Value = unit.TryGet(out NetworkUnit unit1) ? unit1.NetworkBehaviourId : -1;
+            OccupantID.Value = unit.TryGet(out NetworkUnit networkUnit) ? networkUnit.internalId : (ushort)0;
     }
 }

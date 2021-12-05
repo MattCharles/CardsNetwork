@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2701195313983193325}
   - component: {fileID: 2701195313983193324}
   - component: {fileID: 6973628574274557686}
+  - component: {fileID: -8343730279880023816}
   m_Layer: 0
   m_Name: Battlemage
   m_TagString: Untagged
@@ -122,3 +123,18 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+--- !u!114 &-8343730279880023816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2701195313983193327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29986349a4fa44b469ad5d67ddeeafef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  royal:
+    m_InternalValue: 0
+  internalId: 0

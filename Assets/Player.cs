@@ -10,6 +10,10 @@ public class Player : NetworkBehaviour
     public GameObject reticlePrefab;
     public GameObject reticleInstance;
 
+    // Can't use actual Unit object since it can't be serialized cleanly.
+    // Just pass these to GameMaster and let it do the movement of units and stuff
+    ulong selectedUnitID;
+
     public override void OnNetworkSpawn()
     {
         NetworkManager.Singleton.OnClientConnectedCallback += StartPlayerServerRPC;
@@ -35,5 +39,8 @@ public class Player : NetworkBehaviour
         Debug.Log("Tile selected at position: (" + selectedTile.xCoord.Value + ", " + selectedTile.yCoord.Value + ")");
 
         reticleInstance.transform.position = selectedTile.transform.position;
+        selectedUnitID = selectedTile?.OccupantID.Value ?? (ushort)0;
+
+        Debug.Log("Selected Unit ID " + selectedUnitID);
     }
 }

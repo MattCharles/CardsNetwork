@@ -7,6 +7,7 @@ public class NetworkUnit : NetworkBehaviour
     public NetworkVariable<PromotionRule> promotionRule;
 
     public NetworkList<int> movementRules;
+    public ushort internalId;
 
     public struct PromotionRule
     {

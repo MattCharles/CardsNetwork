@@ -13,9 +13,10 @@ public class GameMaster : NetworkBehaviour
     public int max_j = 8;
     public float offset = -3.5f;
     public Dictionary<Tuple<int, int>, GameObject> tiles = new Dictionary<Tuple<int, int>, GameObject>();
-    public Dictionary<int, NetworkUnit> unitsByID = new Dictionary<int, NetworkUnit>();
+    public Dictionary<ushort, NetworkUnit> unitByID = new Dictionary<ushort, NetworkUnit>();
     public ulong blackId;
     public ulong whiteId;
+    public ushort internalUnitId = 1;
 
     private static GameMaster _instance;
 
@@ -108,6 +109,14 @@ public class GameMaster : NetworkBehaviour
             Quaternion.identity
         );
         go.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
+        go.GetComponent<NetworkUnit>().internalId = internalUnitId;
+        unitByID.Add(internalUnitId, go.GetComponent<NetworkUnit>());
+        Tuple<int, int> tileIndex = new Tuple<int, int>(
+            (int)boardPosition.x,
+            (int)boardPosition.y
+        );
+        tiles[tileIndex].GetComponent<NetworkTile>().OccupantID = new NetworkVariable<ushort>(internalUnitId);
+        internalUnitId++;
     }
 
     [ServerRpc]
