@@ -17,7 +17,9 @@ public class GameMaster : NetworkBehaviour
     public Dictionary<intPair, GameObject> tiles = new Dictionary<intPair, GameObject>();
     public Dictionary<ushort, NetworkUnit> unitByID = new Dictionary<ushort, NetworkUnit>();
     public Dictionary<int, moveFunction> movementDictionary = new Dictionary<int, moveFunction>();
+    public Dictionary<int, moveFunction> attackDictionary = new Dictionary<int, moveFunction>();
     public Dictionary<int, moveFunction> canMoveDictionary = new Dictionary<int, moveFunction>();
+    public Dictionary<int, moveFunction> canAttackDictionary = new Dictionary<int, moveFunction>();
     public ulong blackId;
     public ulong whiteId;
     public ushort internalUnitId = 1;
@@ -143,14 +145,16 @@ public class GameMaster : NetworkBehaviour
         }
     }
 
+    //TODO: This will all only work for white
+
     public void BuildMovementDictionary()
     {
-        movementDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, tuple) =>
+        movementDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
         {
-            if (canMoveDictionary[(int)MovementRuleEnum.CHESS_PAWN].Invoke(pieceId, tuple))
+            if (canMoveDictionary[(int)MovementRuleEnum.CHESS_PAWN].Invoke(pieceId, target))
             {
                 NetworkUnit unit = unitByID[pieceId];
-                unit.boardPosition = new intPair(unit.boardPosition.Item1, unit.boardPosition.Item2);
+                unit.boardPosition = new intPair(target.Item1, target.Item2);
                 return true;
             }
             else
@@ -162,21 +166,39 @@ public class GameMaster : NetworkBehaviour
 
     public void BuildCanMoveDictionary()
     {
-        canMoveDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, tuple) =>
+        canMoveDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
         {
             return
-                unitByID[pieceId].boardPosition.Item1 + 1 == tuple.Item1 &&
-                !tiles[new intPair(tuple.Item1 + 1, tuple.Item2)].GetComponent<NetworkTile>().occupied;
+                unitByID[pieceId].boardPosition.Item1 + 1 == target.Item1 &&
+                (!tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);
         });
     }
 
     public void BuildAttackDictionary()
     {
-
+        attackDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
+        {
+            if (attackDictionary[(int)MovementRuleEnum.CHESS_PAWN].Invoke(pieceId, target))
+            {
+                NetworkUnit unit = unitByID[pieceId];
+                unit.boardPosition = new intPair(target.Item1, target.Item2);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        });
     }
 
     public void BuildCanAttackDictionary()
     {
-
+        canAttackDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
+        {
+            return
+                unitByID[pieceId].boardPosition.Item1 + 1 == target.Item1 &&
+                Math.Abs(unitByID[pieceId].boardPosition.Item2 - target.Item2) == 1 &&
+                (tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);
+        });
     }
 }
