@@ -12,7 +12,7 @@ public class GameMaster : NetworkBehaviour
     public int max_i = 8;
     public int max_j = 8;
     public float offset = -3.5f;
-    public Dictionary<Vector2, GameObject> tiles = new Dictionary<Vector2, GameObject>();
+    public Dictionary<Tuple<int, int>, GameObject> tiles = new Dictionary<Tuple<int, int>, GameObject>();
     public Dictionary<int, NetworkUnit> unitsByID = new Dictionary<int, NetworkUnit>();
     public ulong blackId;
     public ulong whiteId;
@@ -57,8 +57,10 @@ public class GameMaster : NetworkBehaviour
                     Quaternion.identity
                 );
 
-                tiles[position] = go;
-                go.GetComponent<NetworkTile>().position = new NetworkVariable<Vector2>(position);
+                tiles[new Tuple<int, int>(i, j)] = go;
+                go.GetComponent<NetworkTile>().xCoord = new NetworkVariable<int>(i);
+                go.GetComponent<NetworkTile>().yCoord = new NetworkVariable<int>(j);
+
 
                 go.GetComponent<NetworkObject>().Spawn();
             }

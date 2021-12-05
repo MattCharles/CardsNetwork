@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -23,8 +24,13 @@ public class Player : NetworkBehaviour
 
     public void Update()
     {
-        Vector2 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Debug.Log(string.Format("Co-ords of mouse is [X: {0} Y: {0}]", pos.x, pos.y));
-        selectedTile = GameMaster.Instance.tiles[pos].GetComponent<NetworkTile>();
+        Vector2 position = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+
+        if (hit.collider != null)
+        {
+            selectedTile = hit.collider.gameObject.GetComponent<NetworkTile>();
+        }
+        Debug.Log("Tile selected at position: (" + selectedTile.xCoord.Value + ", " + selectedTile.yCoord.Value + ")");
     }
 }

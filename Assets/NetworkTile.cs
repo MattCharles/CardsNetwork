@@ -1,9 +1,18 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
 public class NetworkTile : NetworkBehaviour
 {
-    public NetworkVariable<Vector2> position = new NetworkVariable<Vector2>();
+    public Tuple<int, int> position
+    {
+        get
+        {
+            return new Tuple<int, int>(xCoord.Value, yCoord.Value);
+        }
+    }
+    public NetworkVariable<int> xCoord = new NetworkVariable<int>();
+    public NetworkVariable<int> yCoord = new NetworkVariable<int>();
     private NetworkVariable<bool> isBackrow = new NetworkVariable<bool>(false);
 
     private bool occupied
