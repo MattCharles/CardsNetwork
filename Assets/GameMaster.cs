@@ -53,23 +53,15 @@ public class GameMaster : NetworkBehaviour
     {
         for (int i = 0; i < 3; i++)
         {
-            Vector2 position = new Vector2(i + 4 + offset, 5 + offset);
-            GameObject go = Instantiate(
-                spearPrefab,
-                position,
-                Quaternion.identity
-            );
-            go.GetComponent<NetworkObject>().Spawn();
+            Vector2 position = new Vector2(i + 4, 5);
+
+            SpawnUnit(spearPrefab, position, blackId);
         }
 
         // King on 5, 6
-        Vector2 kingPosition = new Vector2(5 + offset, 6 + offset);
-        GameObject kingGo = Instantiate(
-            kingPrefab,
-            kingPosition,
-            Quaternion.identity
-        );
-        kingGo.GetComponent<NetworkObject>().Spawn();
+        Vector2 kingPosition = new Vector2(5, 6);
+
+        SpawnUnit(kingPrefab, kingPosition, blackId);
     }
 
     [ServerRpc]
@@ -77,27 +69,18 @@ public class GameMaster : NetworkBehaviour
     {
         for (int i = 0; i < 3; i++)
         {
-            Vector2 position = new Vector2(i + 1 + offset, 2 + offset);
-            GameObject go = Instantiate(
-                spearPrefab,
-                position,
-                Quaternion.identity
-            );
-            go.GetComponent<NetworkObject>().Spawn();
+            Vector2 position = new Vector2(i + 1, 2);
+
+            SpawnUnit(spearPrefab, position, blackId);
         }
 
         // King on 2, 1
-        Vector2 kingPosition = new Vector2(2 + offset, 1 + offset);
-        GameObject kingGo = Instantiate(
-            kingPrefab,
-            kingPosition,
-            Quaternion.identity
-        );
-        kingGo.GetComponent<NetworkObject>().Spawn();
+        Vector2 kingPosition = new Vector2(2, 1);
+
+        SpawnUnit(kingPrefab, kingPosition, blackId);
     }
 
-    [ServerRpc]
-    private void SpawnUnitServerRPC(GameObject prefab, Vector2 boardPosition, uint clientId)
+    private void SpawnUnit(GameObject prefab, Vector2 boardPosition, ulong clientId)
     {
         Vector2 newPosition = new Vector2(boardPosition.x + offset, boardPosition.y + offset);
         GameObject go = Instantiate(
