@@ -91,13 +91,13 @@ public class GameMaster : NetworkBehaviour
         {
             Vector2 position = new Vector2(i + 1, 2);
 
-            SpawnUnit(spearPrefab, position, blackId);
+            SpawnUnit(spearPrefab, position, whiteId);
         }
 
         // King on 2, 1
         Vector2 kingPosition = new Vector2(2, 1);
 
-        SpawnUnit(kingPrefab, kingPosition, blackId);
+        SpawnUnit(kingPrefab, kingPosition, whiteId);
     }
 
     private void SpawnUnit(GameObject prefab, Vector2 boardPosition, ulong clientId)
