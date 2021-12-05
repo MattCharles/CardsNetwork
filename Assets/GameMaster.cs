@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public class GridMaster : NetworkBehaviour
+public class GameMaster : NetworkBehaviour
 {
     public GameObject tilePrefab;
     public GameObject spearPrefab;

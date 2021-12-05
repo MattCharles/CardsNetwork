@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4915950642448324724
+--- !u!1 &6185246119338594137
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,38 +8,38 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4915950642448324726}
-  - component: {fileID: 4915950642448324725}
-  - component: {fileID: 4915950642448324727}
+  - component: {fileID: 6185246119338594135}
+  - component: {fileID: 6185246119338594134}
+  - component: {fileID: 6185246119338594132}
   m_Layer: 0
-  m_Name: GridMaster
+  m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4915950642448324726
+--- !u!4 &6185246119338594135
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4915950642448324724}
+  m_GameObject: {fileID: 6185246119338594137}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.483071, y: 0.10204616, z: 0.027552458}
+  m_LocalPosition: {x: -1.5035291, y: 0.09433553, z: 0.19192336}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4915950642448324725
+--- !u!114 &6185246119338594134
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4915950642448324724}
+  m_GameObject: {fileID: 6185246119338594137}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
@@ -49,21 +49,17 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &4915950642448324727
+--- !u!114 &6185246119338594132
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4915950642448324724}
+  m_GameObject: {fileID: 6185246119338594137}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a67c6e52fd8a90049bee2a99a3da23bf, type: 3}
+  m_Script: {fileID: 11500000, guid: d0a217cadf1edd14c88ad8e63513054d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tilePrefab: {fileID: 6938521763434618066, guid: 15fe0e2bfc7a2f84cb3e167cf3587897, type: 3}
-  spearPrefab: {fileID: 4984032551655161313, guid: c41cc5f91f930f548809f5d567d79d97, type: 3}
-  kingPrefab: {fileID: 2701195313983193327, guid: b4b24fb73bf87734298f75be96bf0183, type: 3}
-  max_i: 8
-  max_j: 8
-  offset: -3.5
+  units: []
+  color: {r: 0, g: 0, b: 0, a: 0}
