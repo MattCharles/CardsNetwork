@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using intPair = System.Tuple<int, int>;
+using moveFunction = System.Func<ushort, System.Tuple<int, int>, bool>;
 
 public class GameMaster : NetworkBehaviour
 {
@@ -12,8 +14,10 @@ public class GameMaster : NetworkBehaviour
     public int max_i = 8;
     public int max_j = 8;
     public float offset = -3.5f;
-    public Dictionary<Tuple<int, int>, GameObject> tiles = new Dictionary<Tuple<int, int>, GameObject>();
+    public Dictionary<intPair, GameObject> tiles = new Dictionary<intPair, GameObject>();
     public Dictionary<ushort, NetworkUnit> unitByID = new Dictionary<ushort, NetworkUnit>();
+    public Dictionary<int, moveFunction> movementDictionary = new Dictionary<int, moveFunction>();
+    public Dictionary<int, moveFunction> canMoveDictionary = new Dictionary<int, moveFunction>();
     public ulong blackId;
     public ulong whiteId;
     public ushort internalUnitId = 1;
@@ -41,6 +45,7 @@ public class GameMaster : NetworkBehaviour
         SpawnBlackServerRPC();
         SpawnWhiteServerRPC();
 
+
         NetworkManager.Singleton.OnClientConnectedCallback += StartGameServerRPC;
     }
 
@@ -58,7 +63,7 @@ public class GameMaster : NetworkBehaviour
                     Quaternion.identity
                 );
 
-                tiles[new Tuple<int, int>(i, j)] = go;
+                tiles[new intPair(i, j)] = go;
                 go.GetComponent<NetworkTile>().xCoord = new NetworkVariable<int>(i);
                 go.GetComponent<NetworkTile>().yCoord = new NetworkVariable<int>(j);
 
@@ -111,7 +116,7 @@ public class GameMaster : NetworkBehaviour
         go.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
         go.GetComponent<NetworkUnit>().internalId = new NetworkVariable<ushort>(internalUnitId);
         unitByID.Add(internalUnitId, go.GetComponent<NetworkUnit>());
-        Tuple<int, int> tileIndex = new Tuple<int, int>(
+        intPair tileIndex = new intPair(
             (int)boardPosition.x,
             (int)boardPosition.y
         );
@@ -136,5 +141,42 @@ public class GameMaster : NetworkBehaviour
             blackId = ConnectedClientsIds[oneOrZero];
             whiteId = ConnectedClientsIds[1 - oneOrZero];
         }
+    }
+
+    public void BuildMovementDictionary()
+    {
+        movementDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, tuple) =>
+        {
+            if (canMoveDictionary[(int)MovementRuleEnum.CHESS_PAWN].Invoke(pieceId, tuple))
+            {
+                NetworkUnit unit = unitByID[pieceId];
+                unit.boardPosition = new intPair(unit.boardPosition.Item1, unit.boardPosition.Item2);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        });
+    }
+
+    public void BuildCanMoveDictionary()
+    {
+        canMoveDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, tuple) =>
+        {
+            return
+                unitByID[pieceId].boardPosition.Item1 + 1 == tuple.Item1 &&
+                !tiles[new intPair(tuple.Item1 + 1, tuple.Item2)].GetComponent<NetworkTile>().occupied;
+        });
+    }
+
+    public void BuildAttackDictionary()
+    {
+
+    }
+
+    public void BuildCanAttackDictionary()
+    {
+
     }
 }

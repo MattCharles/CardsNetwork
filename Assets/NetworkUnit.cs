@@ -1,4 +1,5 @@
 using Unity.Netcode;
+using intPair = System.Tuple<int, int>;
 
 public class NetworkUnit : NetworkBehaviour
 {
@@ -8,6 +9,7 @@ public class NetworkUnit : NetworkBehaviour
 
     public NetworkList<int> movementRules;
     public NetworkVariable<ushort> internalId;
+    public intPair boardPosition;
 
     public struct PromotionRule
     {

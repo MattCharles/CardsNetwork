@@ -16,7 +16,7 @@ public class NetworkTile : NetworkBehaviour
     private NetworkVariable<bool> isBackrow = new NetworkVariable<bool>(false);
     public NetworkVariable<ushort> OccupantID = new NetworkVariable<ushort>();
 
-    private bool occupied
+    public bool occupied
     {
         get
         {
