@@ -16,6 +16,23 @@ public class GameMaster : NetworkBehaviour
     public Dictionary<int, NetworkUnit> unitsByID = new Dictionary<int, NetworkUnit>();
     public ulong blackId;
     public ulong whiteId;
+
+    private static GameMaster _instance;
+
+    public static GameMaster Instance { get { return _instance; } }
+
+
+    private void Awake()
+    {
+        if (_instance != null && _instance != this)
+        {
+            Destroy(this.gameObject);
+        }
+        else
+        {
+            _instance = this;
+        }
+    }
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
