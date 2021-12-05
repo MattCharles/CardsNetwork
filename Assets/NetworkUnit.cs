@@ -1,10 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Unity.Netcode;
 
 public class NetworkUnit : NetworkBehaviour
 {
-    public NetworkVariable<PromotionRule>? promotionRule;
+    public NetworkVariable<PromotionRule> promotionRule;
 
-    public NetworkVariable<MovementRule[]> movementRules;
+    public NetworkList<int> movementRules;
+
+    public struct PromotionRule
+    {
+        public int promoConditionIndex;
+        public int upgradeToIndex;
+    }
 }
