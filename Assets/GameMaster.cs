@@ -3,10 +3,26 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using intPair = System.Tuple<int, int>;
-using moveFunction = System.Func<ushort, System.Tuple<int, int>, bool>;
+
+public struct SpaceAndOccupant
+{
+    public SpaceAndOccupant(NetworkTile _space, NetworkUnit _occupant = null)
+    {
+        space = _space;
+        occupant = _occupant;
+    }
+    public NetworkTile space;
+    public NetworkUnit? occupant;
+}
 
 public class GameMaster : NetworkBehaviour
 {
+
+    NetworkTile selectedTile;
+    public GameObject reticlePrefab;
+    public GameObject reticleInstance;
+    public GameObject selectReticlePrefab;
+    public GameObject selectReticleInstance;
     public GameObject tilePrefab;
     public GameObject spearPrefab;
     public GameObject kingPrefab;
@@ -14,15 +30,13 @@ public class GameMaster : NetworkBehaviour
     public int max_i = 8;
     public int max_j = 8;
     public float offset = -3.5f;
-    public Dictionary<intPair, GameObject> tiles = new Dictionary<intPair, GameObject>();
+    public Dictionary<intPair, SpaceAndOccupant> tiles = new Dictionary<intPair, SpaceAndOccupant>();
+    public Dictionary<NetworkTile, intPair> findCoords = new Dictionary<NetworkTile, intPair>();
     public Dictionary<ushort, NetworkUnit> unitByID = new Dictionary<ushort, NetworkUnit>();
-    public Dictionary<int, moveFunction> movementDictionary = new Dictionary<int, moveFunction>();
-    public Dictionary<int, moveFunction> attackDictionary = new Dictionary<int, moveFunction>();
-    public Dictionary<int, moveFunction> canMoveDictionary = new Dictionary<int, moveFunction>();
-    public Dictionary<int, moveFunction> canAttackDictionary = new Dictionary<int, moveFunction>();
     public ulong blackId;
     public ulong whiteId;
     public ushort internalUnitId = 1;
+    public ushort selectedUnitID;
 
     private static GameMaster _instance;
 
@@ -44,14 +58,14 @@ public class GameMaster : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        selectReticleInstance = Instantiate(selectReticlePrefab, Vector3.zero, Quaternion.identity);
+        reticleInstance = Instantiate(reticlePrefab, Vector3.zero, Quaternion.identity);
+        base.OnNetworkSpawn();
+
         SpawnGridServerRPC();
         SpawnBlackServerRPC();
         SpawnWhiteServerRPC();
-
-        BuildCanAttackDictionary();
-        BuildAttackDictionary();
-        BuildCanMoveDictionary();
-        BuildMovementDictionary();
 
         NetworkManager.Singleton.OnClientConnectedCallback += StartGameServerRPC;
     }
@@ -70,7 +84,8 @@ public class GameMaster : NetworkBehaviour
                     Quaternion.identity
                 );
 
-                tiles[new intPair(i, j)] = go;
+                tiles[new intPair(i, j)] = new SpaceAndOccupant(go.GetComponent<NetworkTile>());
+                findCoords[go.GetComponent<NetworkTile>()] = new intPair(i, j);
                 go.GetComponent<NetworkTile>().xCoord = new NetworkVariable<int>(i);
                 go.GetComponent<NetworkTile>().yCoord = new NetworkVariable<int>(j);
 
@@ -128,8 +143,7 @@ public class GameMaster : NetworkBehaviour
             (int)boardPosition.x,
             (int)boardPosition.y
         );
-        tiles[tileIndex].GetComponent<NetworkTile>().OccupantID = new NetworkVariable<ushort>(internalUnitId);
-        Debug.Log("Occupant: " + tiles[tileIndex].GetComponent<NetworkTile>().OccupantID.Value);
+        tiles[tileIndex] = new SpaceAndOccupant(tiles[tileIndex].space, go.GetComponent<NetworkUnit>());
         internalUnitId++;
     }
 
@@ -157,7 +171,6 @@ public class GameMaster : NetworkBehaviour
     {
         // TODO: assert that unit belongs to caller
         intPair target = new intPair(targetX, targetY);
-        int moveMethod = 1; // unitByID[pieceId].movementRule.Value;
         Debug.Log("Here");
         Debug.Log(canMove(MovementRuleEnum.CHESS_PAWN, pieceId, target));
         Debug.Log("Movement Rule = " + MovementRuleEnum.CHESS_PAWN);
@@ -179,77 +192,49 @@ public class GameMaster : NetworkBehaviour
 
     //TODO: This will all only work for white
 
-    public void BuildMovementDictionary()
-    {
-        movementDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
-        {
-            if (canMoveDictionary[(int)MovementRuleEnum.CHESS_PAWN].Invoke(pieceId, target))
-            {
-                NetworkUnit unit = unitByID[pieceId];
-                unit.boardPosition = new intPair(target.Item1, target.Item2);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        });
-    }
-
-    public void BuildCanMoveDictionary()
-    {
-        canMoveDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
-        {
-            return
-                unitByID[pieceId].boardPosition.Item1 + 1 == target.Item1 &&
-                (!tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);
-        });
-    }
-
-    public void BuildAttackDictionary()
-    {
-        attackDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
-        {
-            // TODO: this func is null, I think. is this the right way to invoke funk?
-            if (false) //canAttack(MovementRuleEnum.CHESS_PAWN, pieceId, target))
-            {
-                NetworkUnit unit = unitByID[pieceId];
-                unit.boardPosition = new intPair(target.Item1, target.Item2);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        });
-    }
-
     private bool canMove(MovementRuleEnum movementRule, ushort pieceId, intPair target)
     {
         if (movementRule == MovementRuleEnum.CHESS_PAWN)
         {
-            Debug.Log(
-                (unitByID[pieceId].boardPosition.Item1 + 1) + " = first ask" +
-                (!tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false) + " = secondAsk"
-            );
-            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)]);
-            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>());
-            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);  // TODO: This is the problem - don't expect Tile to know anything. The man is stupid
+            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)].occupant);
+            Debug.Log("Left " + unitByID[pieceId].boardPosition.Item1 + 1); // TODO: This is way off, left is like 31 or something
+            Debug.Log("Right: " + target.Item1);
             return
                 unitByID[pieceId].boardPosition.Item1 + 1 == target.Item1 &&
-                (!tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);
+                (tiles[new intPair(target.Item1 + 1, target.Item2)].occupant?.internalId?.Value ?? 0) == 0;
         }
         return false;
     }
 
-    public void BuildCanAttackDictionary()
+    public void Update()
     {
-        canAttackDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
+        Vector2 position = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+
+        if (hit.collider != null)
         {
-            return
-                unitByID[pieceId].boardPosition.Item1 + 1 == target.Item1 &&
-                Math.Abs(unitByID[pieceId].boardPosition.Item2 - target.Item2) == 1 &&
-                (tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);
-        });
+            selectedTile = hit.collider.gameObject.GetComponent<NetworkTile>();
+        }
+
+        reticleInstance.transform.position = selectedTile?.transform?.position ?? reticleInstance.transform.position;
+        if (Input.GetMouseButtonDown(0))
+        {
+            selectReticleInstance.transform.position = selectedTile.transform.position;
+            selectedUnitID = tiles[findCoords[selectedTile]].occupant.internalId.Value;
+
+            Debug.Log("Selected Unit ID " + selectedUnitID);
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            RaycastHit2D hit2 = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+
+            if (hit2.collider != null)
+            {
+                selectedTile = hit.collider.gameObject.GetComponent<NetworkTile>();
+            }
+            Debug.Log("Right click! => " + " unit ID " + selectedUnitID + ": " + selectedTile.xCoord.Value + ", " + selectedTile.yCoord.Value);
+            GameMaster.Instance.MoveServerRpc(selectedUnitID, selectedTile.xCoord.Value, selectedTile.yCoord.Value);
+        }
     }
 }
