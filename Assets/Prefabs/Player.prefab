@@ -64,3 +64,5 @@ MonoBehaviour:
   units: []
   reticlePrefab: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}
   reticleInstance: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}
+  selectReticlePrefab: {fileID: 4642545050891888907, guid: 92bf15ca811bb1d4e88c85826a3ccd4f, type: 3}
+  selectReticleInstance: {fileID: 4642545050891888907, guid: 92bf15ca811bb1d4e88c85826a3ccd4f, type: 3}

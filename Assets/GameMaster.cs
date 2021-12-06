@@ -40,6 +40,7 @@ public class GameMaster : NetworkBehaviour
             _instance = this;
         }
     }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -47,6 +48,10 @@ public class GameMaster : NetworkBehaviour
         SpawnBlackServerRPC();
         SpawnWhiteServerRPC();
 
+        BuildCanAttackDictionary();
+        BuildAttackDictionary();
+        BuildCanMoveDictionary();
+        BuildMovementDictionary();
 
         NetworkManager.Singleton.OnClientConnectedCallback += StartGameServerRPC;
     }
@@ -117,12 +122,14 @@ public class GameMaster : NetworkBehaviour
         );
         go.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
         go.GetComponent<NetworkUnit>().internalId = new NetworkVariable<ushort>(internalUnitId);
+        go.GetComponent<NetworkUnit>().boardPosition = new intPair((int)boardPosition.x, (int)boardPosition.y);
         unitByID.Add(internalUnitId, go.GetComponent<NetworkUnit>());
         intPair tileIndex = new intPair(
             (int)boardPosition.x,
             (int)boardPosition.y
         );
         tiles[tileIndex].GetComponent<NetworkTile>().OccupantID = new NetworkVariable<ushort>(internalUnitId);
+        Debug.Log("Occupant: " + tiles[tileIndex].GetComponent<NetworkTile>().OccupantID.Value);
         internalUnitId++;
     }
 
@@ -148,7 +155,20 @@ public class GameMaster : NetworkBehaviour
     [ServerRpc]
     public void MoveServerRpc(ushort pieceId, int targetX, int targetY)
     {
-
+        // TODO: assert that unit belongs to caller
+        intPair target = new intPair(targetX, targetY);
+        int moveMethod = 1; // unitByID[pieceId].movementRule.Value;
+        Debug.Log("Here");
+        Debug.Log(canMove(MovementRuleEnum.CHESS_PAWN, pieceId, target));
+        Debug.Log("Movement Rule = " + MovementRuleEnum.CHESS_PAWN);
+        Debug.Log("pieceId = " + pieceId);
+        Debug.Log("target = " + target);
+        if (canMove(MovementRuleEnum.CHESS_PAWN, pieceId, target))
+        {
+            Debug.Log("Here!!");
+            NetworkUnit unit = unitByID[pieceId];
+            unit.transform.position = new Vector2(targetX, targetY);
+        }
     }
 
     [ServerRpc]
@@ -190,7 +210,8 @@ public class GameMaster : NetworkBehaviour
     {
         attackDictionary.Add((int)MovementRuleEnum.CHESS_PAWN, (pieceId, target) =>
         {
-            if (attackDictionary[(int)MovementRuleEnum.CHESS_PAWN].Invoke(pieceId, target))
+            // TODO: this func is null, I think. is this the right way to invoke funk?
+            if (false) //canAttack(MovementRuleEnum.CHESS_PAWN, pieceId, target))
             {
                 NetworkUnit unit = unitByID[pieceId];
                 unit.boardPosition = new intPair(target.Item1, target.Item2);
@@ -201,6 +222,24 @@ public class GameMaster : NetworkBehaviour
                 return false;
             }
         });
+    }
+
+    private bool canMove(MovementRuleEnum movementRule, ushort pieceId, intPair target)
+    {
+        if (movementRule == MovementRuleEnum.CHESS_PAWN)
+        {
+            Debug.Log(
+                (unitByID[pieceId].boardPosition.Item1 + 1) + " = first ask" +
+                (!tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false) + " = secondAsk"
+            );
+            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)]);
+            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>());
+            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);  // TODO: This is the problem - don't expect Tile to know anything. The man is stupid
+            return
+                unitByID[pieceId].boardPosition.Item1 + 1 == target.Item1 &&
+                (!tiles[new intPair(target.Item1 + 1, target.Item2)]?.GetComponent<NetworkTile>()?.occupied ?? false);
+        }
+        return false;
     }
 
     public void BuildCanAttackDictionary()

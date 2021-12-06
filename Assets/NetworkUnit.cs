@@ -7,7 +7,7 @@ public class NetworkUnit : NetworkBehaviour
 
     public NetworkVariable<PromotionRule> promotionRule;
 
-    public NetworkList<int> movementRules;
+    public NetworkVariable<int> movementRule;
     public NetworkVariable<ushort> internalId;
     public intPair boardPosition;
 
