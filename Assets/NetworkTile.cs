@@ -4,15 +4,6 @@ using UnityEngine;
 
 public class NetworkTile : NetworkBehaviour
 {
-    public Tuple<int, int> position
-    {
-        get
-        {
-            return new Tuple<int, int>(xCoord.Value, yCoord.Value);
-        }
-    }
-    public NetworkVariable<int> xCoord = new NetworkVariable<int>(0);
-    public NetworkVariable<int> yCoord = new NetworkVariable<int>(0);
     private NetworkVariable<bool> isBackrow = new NetworkVariable<bool>(false);
     public NetworkVariable<ushort> OccupantID = new NetworkVariable<ushort>();
 

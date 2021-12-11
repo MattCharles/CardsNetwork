@@ -23,14 +23,15 @@ public class GameMaster : NetworkBehaviour
     public GameObject reticleInstance;
     public GameObject selectReticlePrefab;
     public GameObject selectReticleInstance;
-    public GameObject tilePrefab;
-    public GameObject spearPrefab;
-    public GameObject kingPrefab;
+    public NetworkTile tilePrefab;
+    public NetworkUnit spearPrefab;
+    public NetworkUnit kingPrefab;
     public Action<uint> action;
     public int max_i = 8;
     public int max_j = 8;
     public float offset = -3.5f;
-    public Dictionary<intPair, SpaceAndOccupant> tiles = new Dictionary<intPair, SpaceAndOccupant>();
+    public List<List<NetworkTile>> tiles;
+    public List<List<NetworkUnit>> units;
     public Dictionary<NetworkTile, intPair> findCoords = new Dictionary<NetworkTile, intPair>();
     public Dictionary<ushort, NetworkUnit> unitByID = new Dictionary<ushort, NetworkUnit>();
     public ulong blackId;
@@ -41,6 +42,7 @@ public class GameMaster : NetworkBehaviour
     private static GameMaster _instance;
 
     public static GameMaster Instance { get { return _instance; } }
+    public Canvas startGameUI;
 
 
     private void Awake()
@@ -55,9 +57,26 @@ public class GameMaster : NetworkBehaviour
         }
     }
 
+    public void StartHost()
+    {
+        NetworkManager.Singleton.StartHost();
+        startGameUI.gameObject.SetActive(false);
+        Debug.Log("Host");
+    }
+
+    public void StartClient()
+    {
+        NetworkManager.Singleton.StartClient();
+        startGameUI.gameObject.SetActive(false);
+        Debug.Log("Client");
+    }
+
     public override void OnNetworkSpawn()
     {
+        Debug.Log("On Network Spawn");
         base.OnNetworkSpawn();
+
+        NetworkManager.Singleton.OnClientConnectedCallback += (ulong smth) => { };
 
         selectReticleInstance = Instantiate(selectReticlePrefab, Vector3.zero, Quaternion.identity);
         reticleInstance = Instantiate(reticlePrefab, Vector3.zero, Quaternion.identity);
@@ -67,32 +86,53 @@ public class GameMaster : NetworkBehaviour
         SpawnBlackServerRPC();
         SpawnWhiteServerRPC();
 
-        NetworkManager.Singleton.OnClientConnectedCallback += StartGameServerRPC;
     }
+
+    public Vector2 gridSpaceToWorldSpace(Vector2Int gridSpace)
+    {
+        Vector2 tileSize = tilePrefab.transform.GetComponent<SpriteRenderer>().bounds.size;
+        return gridSpace * tileSize;
+    }
+
+    // 0 => -.48, .48
+    // 1 => .480...1, .96
+    // x => 
+    public Vector2Int worldSpaceToGridSpace(Vector2 worldSpace)
+    {
+        Vector2 tileSize = tilePrefab.transform.GetComponent<SpriteRenderer>().bounds.size; // .96
+        Vector2 offset = tileSize / 2;
+
+        return Vector2Int.FloorToInt((worldSpace + offset) / tileSize);
+    }
+
 
     [ServerRpc]
     public void SpawnGridServerRPC()
     {
-        for (int i = 0; i < max_i; i++)
+        List<List<NetworkUnit>> unitRows = new List<List<NetworkUnit>>();
+        List<List<NetworkTile>> rows = new List<List<NetworkTile>>();
+        for (int x = 0; x < max_i; x++)
         {
-            for (int j = 0; j < max_j; j++)
+            List<NetworkUnit> unitColumn = new List<NetworkUnit>();
+            List<NetworkTile> column = new List<NetworkTile>();
+            unitRows.Add(unitColumn);
+            rows.Add(column);
+            for (int y = 0; y < max_j; y++)
             {
-                Vector2 position = new Vector2(i + offset, j + offset);
-                GameObject go = Instantiate(
+                Vector2 position = gridSpaceToWorldSpace(new Vector2Int(x, y));
+                NetworkTile tile = Instantiate<NetworkTile>(
                     tilePrefab,
                     position,
                     Quaternion.identity
                 );
+                column.Add(tile);
+                unitColumn.Add(null); //ensure that unitColumn list has enough spaces in it to hold units at any position
 
-                tiles[new intPair(i, j)] = new SpaceAndOccupant(go.GetComponent<NetworkTile>());
-                findCoords[go.GetComponent<NetworkTile>()] = new intPair(i, j);
-                go.GetComponent<NetworkTile>().xCoord = new NetworkVariable<int>(i);
-                go.GetComponent<NetworkTile>().yCoord = new NetworkVariable<int>(j);
-
-
-                go.GetComponent<NetworkObject>().Spawn();
+                tile.GetComponent<NetworkObject>().Spawn();
             }
         }
+        tiles = rows;
+        units = unitRows;
     }
 
     [ServerRpc]
@@ -100,15 +140,15 @@ public class GameMaster : NetworkBehaviour
     {
         for (int i = 0; i < 3; i++)
         {
-            Vector2 position = new Vector2(i + 4, 5);
+            Vector2Int position = new Vector2Int(i + 4, 5);
 
-            SpawnUnit(spearPrefab, position, blackId);
+            SpawnUnit(spearPrefab, position, PlayerEnum.BLACK);
         }
 
         // King on 5, 6
-        Vector2 kingPosition = new Vector2(5, 6);
+        Vector2Int kingPosition = new Vector2Int(5, 6);
 
-        SpawnUnit(kingPrefab, kingPosition, blackId);
+        SpawnUnit(kingPrefab, kingPosition, PlayerEnum.BLACK);
     }
 
     [ServerRpc]
@@ -116,92 +156,105 @@ public class GameMaster : NetworkBehaviour
     {
         for (int i = 0; i < 3; i++)
         {
-            Vector2 position = new Vector2(i + 1, 2);
+            Vector2Int position = new Vector2Int(i + 1, 2);
 
-            SpawnUnit(spearPrefab, position, whiteId);
+            SpawnUnit(spearPrefab, position, PlayerEnum.WHITE);
         }
 
         // King on 2, 1
-        Vector2 kingPosition = new Vector2(2, 1);
+        Vector2Int kingPosition = new Vector2Int(2, 1);
 
-        SpawnUnit(kingPrefab, kingPosition, whiteId);
+        SpawnUnit(kingPrefab, kingPosition, PlayerEnum.WHITE);
     }
 
-    private void SpawnUnit(GameObject prefab, Vector2 boardPosition, ulong clientId)
+    private void SpawnUnit(NetworkUnit networkUnit, Vector2Int boardPosition, PlayerEnum team)
     {
-        Vector2 newPosition = new Vector2(boardPosition.x + offset, boardPosition.y + offset);
-        GameObject go = Instantiate(
-            prefab,
+        Vector2 newPosition = gridSpaceToWorldSpace(boardPosition);
+        NetworkUnit unit = Instantiate(
+            networkUnit,
             newPosition,
             Quaternion.identity
         );
-        go.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
-        go.GetComponent<NetworkUnit>().internalId = new NetworkVariable<ushort>(internalUnitId);
-        go.GetComponent<NetworkUnit>().boardPosition = new intPair((int)boardPosition.x, (int)boardPosition.y);
-        unitByID.Add(internalUnitId, go.GetComponent<NetworkUnit>());
-        intPair tileIndex = new intPair(
-            (int)boardPosition.x,
-            (int)boardPosition.y
-        );
-        tiles[tileIndex] = new SpaceAndOccupant(tiles[tileIndex].space, go.GetComponent<NetworkUnit>());
+        unit.GetComponent<NetworkObject>().Spawn();
+        unit.team.Value = team;
+        unit.internalId = new NetworkVariable<ushort>(internalUnitId);
+        unitByID.Add(internalUnitId, unit.GetComponent<NetworkUnit>());
+        units[boardPosition.x][boardPosition.y] = unit;
         internalUnitId++;
     }
 
-    [ServerRpc]
-    public void StartGameServerRPC(ulong cliendId)
+    public bool isControlledPiece(ushort pieceId)
     {
-        if (NetworkManager.Singleton.ConnectedClientsIds.Count == 1)
-        {
-            return; // Only one person; Don't assign white or black yet
-        }
-        else if (NetworkManager.Singleton.ConnectedClientsIds.Count == 2)
-        {
-            // second person has joined
-            // TODO: might be weird if second and third leave but let's not worry about that just yet
-
-            int oneOrZero = new System.Random().Next(1);
-            List<ulong> ConnectedClientsIds = (List<ulong>)NetworkManager.Singleton.ConnectedClientsIds;
-            blackId = ConnectedClientsIds[oneOrZero];
-            whiteId = ConnectedClientsIds[1 - oneOrZero];
-        }
+        return unitByID[pieceId].team.Value == PlayerEnum.WHITE; //TODO: fix
     }
 
     [ServerRpc]
-    public void MoveServerRpc(ushort pieceId, int targetX, int targetY)
+    public void MoveServerRpc(ushort pieceId, Vector2Int targetGridPosition)
     {
         // TODO: assert that unit belongs to caller
-        intPair target = new intPair(targetX, targetY);
-        Debug.Log("Here");
-        Debug.Log(canMove(MovementRuleEnum.CHESS_PAWN, pieceId, target));
-        Debug.Log("Movement Rule = " + MovementRuleEnum.CHESS_PAWN);
-        Debug.Log("pieceId = " + pieceId);
-        Debug.Log("target = " + target);
-        if (canMove(MovementRuleEnum.CHESS_PAWN, pieceId, target))
+        Debug.Log(canMove(MovementRuleEnum.CHESS_PAWN, pieceId, targetGridPosition));
+        if (canMove(MovementRuleEnum.CHESS_PAWN, pieceId, targetGridPosition))
         {
-            Debug.Log("Here!!");
-            NetworkUnit unit = unitByID[pieceId];
-            unit.transform.position = new Vector2(targetX, targetY);
+            moveUnit(pieceId, targetGridPosition);
         }
     }
 
-    [ServerRpc]
-    public void AttackServerRpc(ushort pieceId, int targetX, int targetY)
+    public void moveUnit(ushort pieceId, Vector2Int targetGridPosition)
     {
+        NetworkUnit unit = unitByID[pieceId];
+        Vector2Int currentPosition = unitToGridSpace(unit);
+        units[currentPosition.x][currentPosition.y] = null;
+        units[targetGridPosition.x][targetGridPosition.y] = unit;
+        unit.transform.position = gridSpaceToWorldSpace(targetGridPosition);
+    }
 
+    public Vector2Int tileToGridSpace(NetworkTile tile)
+    {
+        for (int x = 0; x < tiles.Count; x++)
+        {
+            for (int y = 0; y < tiles[x].Count; y++)
+            {
+                if (tiles[x][y] == tile)
+                {
+                    return new Vector2Int(x, y);
+                }
+            }
+        }
+
+        throw new Exception("Tile not found in grid.");
+    }
+
+    public Vector2Int unitToGridSpace(NetworkUnit unit)
+    {
+        for (int x = 0; x < units.Count; x++)
+        {
+            for (int y = 0; y < units[x].Count; y++)
+            {
+                if (units[x][y] == unit)
+                {
+                    return new Vector2Int(x, y);
+                }
+            }
+        }
+
+        throw new Exception("Unit not found in grid.");
     }
 
     //TODO: This will all only work for white
 
-    private bool canMove(MovementRuleEnum movementRule, ushort pieceId, intPair target)
+    private bool canMove(MovementRuleEnum movementRule, ushort pieceId, Vector2Int targetTilePosition)
     {
+        if (!isControlledPiece(pieceId)) // You don't own this
+        {
+            return false;
+        }
+        NetworkUnit unit = unitByID[pieceId];
         if (movementRule == MovementRuleEnum.CHESS_PAWN)
         {
-            Debug.Log(tiles[new intPair(target.Item1 + 1, target.Item2)].occupant);
-            Debug.Log("Left " + unitByID[pieceId].boardPosition.Item1 + 1); // TODO: This is way off, left is like 31 or something
-            Debug.Log("Right: " + target.Item1);
+            Vector2Int backwardFromTarget = targetTilePosition - new Vector2Int(0, 1);
             return
-                unitByID[pieceId].boardPosition.Item1 + 1 == target.Item1 &&
-                (tiles[new intPair(target.Item1 + 1, target.Item2)].occupant?.internalId?.Value ?? 0) == 0;
+                unitToGridSpace(unitByID[pieceId]) == backwardFromTarget && // TODO: this is yucky and needs to flip according to player
+                units[targetTilePosition.x][targetTilePosition.y] == null; // space is unoccupied
         }
         return false;
     }
@@ -215,26 +268,24 @@ public class GameMaster : NetworkBehaviour
         {
             selectedTile = hit.collider.gameObject.GetComponent<NetworkTile>();
         }
+        if (!selectedTile)
+        {
+            return;
+        }
 
         reticleInstance.transform.position = selectedTile?.transform?.position ?? reticleInstance.transform.position;
+        Vector2Int gridPosition = worldSpaceToGridSpace(position);
         if (Input.GetMouseButtonDown(0))
         {
+            Vector2 tileSize = tilePrefab.transform.GetComponent<SpriteRenderer>().bounds.size;
             selectReticleInstance.transform.position = selectedTile.transform.position;
-            selectedUnitID = tiles[findCoords[selectedTile]].occupant.internalId.Value;
-
-            Debug.Log("Selected Unit ID " + selectedUnitID);
+            selectedUnitID = units[gridPosition.x][gridPosition.y].internalId.Value;
         }
 
         if (Input.GetMouseButtonDown(1))
         {
-            RaycastHit2D hit2 = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-
-            if (hit2.collider != null)
-            {
-                selectedTile = hit.collider.gameObject.GetComponent<NetworkTile>();
-            }
-            Debug.Log("Right click! => " + " unit ID " + selectedUnitID + ": " + selectedTile.xCoord.Value + ", " + selectedTile.yCoord.Value);
-            GameMaster.Instance.MoveServerRpc(selectedUnitID, selectedTile.xCoord.Value, selectedTile.yCoord.Value);
+            Debug.Log("grid space: " + gridPosition);
+            GameMaster.Instance.MoveServerRpc(selectedUnitID, gridPosition);
         }
     }
 }

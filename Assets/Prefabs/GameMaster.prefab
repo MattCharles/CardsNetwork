@@ -61,9 +61,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 037fd6263fe42564aa31c2e1426bd9eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  reticlePrefab: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}
+  reticleInstance: {fileID: 7807168715140660464, guid: 90699bf052fd97746b930ef321eb950e, type: 3}
+  selectReticlePrefab: {fileID: 4642545050891888907, guid: 92bf15ca811bb1d4e88c85826a3ccd4f, type: 3}
+  selectReticleInstance: {fileID: 4642545050891888907, guid: 92bf15ca811bb1d4e88c85826a3ccd4f, type: 3}
   tilePrefab: {fileID: 6938521763434618066, guid: 15fe0e2bfc7a2f84cb3e167cf3587897, type: 3}
   spearPrefab: {fileID: 4984032551655161313, guid: c41cc5f91f930f548809f5d567d79d97, type: 3}
   kingPrefab: {fileID: 2701195313983193327, guid: b4b24fb73bf87734298f75be96bf0183, type: 3}
   max_i: 8
   max_j: 8
   offset: -3.5
+  blackId: 0
+  whiteId: 0
+  internalUnitId: 1
+  selectedUnitID: 0
